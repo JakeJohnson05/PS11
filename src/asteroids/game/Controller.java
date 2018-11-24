@@ -17,13 +17,13 @@ public class Controller implements KeyListener, ActionListener
 
     /** The ship (if one is active) or null (otherwise) */
     private Ship ship;
-    
+
     /** The AlienShip */
     private AlienShip alienShip;
 
     /** When this timer goes off, it is time to refresh the animation */
     private Timer refreshTimer;
-    
+
     /** AlienShip Spawn Timer */
     private Timer alienShipSpawnTimer;
 
@@ -51,9 +51,6 @@ public class Controller implements KeyListener, ActionListener
 
     /** The game display */
     private Display display;
-    
-    /** If ship is invincible, whether or not collisions should be ignored */
-    public boolean checkCollisions;
 
     /**
      * Constructs a controller to coordinate the game and screen
@@ -65,7 +62,7 @@ public class Controller implements KeyListener, ActionListener
 
         // Set up the refresh timer.
         refreshTimer = new Timer(FRAME_INTERVAL, this);
-        
+
         // Set up AlienShipSpawn timer
         this.alienShipSpawnTimer = new Timer(ALIEN_DELAY, this);
 
@@ -74,9 +71,6 @@ public class Controller implements KeyListener, ActionListener
 
         // Record the display object
         display = new Display(this);
-        
-        // Check for collisions
-        this.checkCollisions = true;
 
         // Bring up the splash screen and start the refresh timer
         splashScreen();
@@ -93,7 +87,7 @@ public class Controller implements KeyListener, ActionListener
     {
         return ship;
     }
-    
+
     /**
      * Returns the AlienShip
      * 
@@ -103,7 +97,7 @@ public class Controller implements KeyListener, ActionListener
     {
         return this.alienShip;
     }
-    
+
     /**
      * Returns the AlienShipSpawnTimer
      * 
@@ -113,13 +107,13 @@ public class Controller implements KeyListener, ActionListener
     {
         return this.alienShipSpawnTimer;
     }
-    
+
     /** Add to the score */
-    public void addScore(int points)
+    public void addScore (int points)
     {
         this.score += points;
     }
-    
+
     /**
      * Get the current score
      * 
@@ -129,7 +123,7 @@ public class Controller implements KeyListener, ActionListener
     {
         return this.score;
     }
-    
+
     /**
      * Get the current level
      * 
@@ -225,7 +219,7 @@ public class Controller implements KeyListener, ActionListener
         this.lives = 3;
         this.score = 0;
         this.level = 1;
-        
+
         // Update display for stats
         this.display.setScore(this.getScore());
         this.display.setLevel(this.getLevel());
@@ -249,7 +243,7 @@ public class Controller implements KeyListener, ActionListener
         // Give focus to the game screen
         display.requestFocusInWindow();
     }
-    
+
     /**
      * Go to the next level
      */
@@ -257,11 +251,11 @@ public class Controller implements KeyListener, ActionListener
     {
         // Clear Screen
         clear();
-        
+
         // Update Level
         this.level++;
         this.display.setLevel(this.getLevel());
-        
+
         // Place asteroids
         placeAsteroids();
 
@@ -270,7 +264,7 @@ public class Controller implements KeyListener, ActionListener
 
         // Place lives remaining
         drawLives();
-        
+
         // Start countDownTimer for alienShip arrival
         this.alienShipSpawnTimer.start();
 
@@ -297,11 +291,9 @@ public class Controller implements KeyListener, ActionListener
     {
         // Null out the ship
         ship = null;
-        
 
         // Display a graphic
-        
-        
+
         // Decrement lives
         lives--;
 
@@ -319,7 +311,7 @@ public class Controller implements KeyListener, ActionListener
     public void asteroidDestroyed ()
     {
         this.display.setScore(this.getScore());
-        
+
         // If all the asteroids are gone, schedule a transition
         if (pstate.countAsteroids() == 0)
         {
@@ -385,18 +377,14 @@ public class Controller implements KeyListener, ActionListener
                 this.ship.turnLeft();
             }
         }
-        
-        // If invinicibility is over
-        else if (!this.checkCollisions && e.getSource() == this.ship.getInvincibilityTimer())
-        {
-            this.ship.endInvincibilityTimer();
-            this.checkCollisions = true;
-        }
-        
+
         // If it's time to start UFO encounters
         else if (e.getSource() == this.getAlienShipSpawnTimer())
         {
+            // Stop AlienSpawnTimer
             this.getAlienShipSpawnTimer().stop();
+            
+            // this.getLevel == 2 ? AlienShip size = 0 : size = 1
             this.alienShip = this.getLevel() == 2 ? new AlienShip(0, this) : new AlienShip(1, this);
             addParticipant(this.alienShip);
         }
@@ -437,9 +425,7 @@ public class Controller implements KeyListener, ActionListener
             }
             else
             {
-                this.checkCollisions = false;
                 placeShip();
-                ship.setInvincible();
             }
         }
     }
@@ -450,34 +436,37 @@ public class Controller implements KeyListener, ActionListener
     @Override
     public void keyPressed (KeyEvent e)
     {
-        int keyCode = e.getKeyCode();
-
-        // Acclerating - UP_ARROW
-        if (keyCode == KeyEvent.VK_UP && ship != null && !ship.keyControls[0])
+        if (this.getShip() != null)
         {
-            ship.keyControls[0] = true;
-            ship.accelerate();
-        }
-
-        // Turn Right - RIGHT_ARROW
-        if (keyCode == KeyEvent.VK_RIGHT && ship != null && !ship.keyControls[1])
-        {
-            ship.keyControls[1] = true;
-            ship.turnRight();
-        }
-
-        // Turn Left - LEFT_ARROW
-        if (keyCode == KeyEvent.VK_LEFT && ship != null && !ship.keyControls[2])
-        {
-            ship.keyControls[2] = true;
-            ship.turnLeft();
-        }
-
-        // Bullet Fired - SPACE_BAR
-        if (keyCode == KeyEvent.VK_SPACE && ship != null && numBullets < BULLET_LIMIT && !ship.isInvincible())
-        {
-            numBullets++;
-            addParticipant(new Bullet(ship.getXNose(), ship.getYNose(), ship.getRotation(), this));
+            int keyCode = e.getKeyCode();
+            
+            // Acclerating - UP_ARROW
+            if (keyCode == KeyEvent.VK_UP && !ship.keyControls[0])
+            {
+                ship.keyControls[0] = true;
+                ship.accelerate();
+            }
+    
+            // Turn Right - RIGHT_ARROW
+            else if (keyCode == KeyEvent.VK_RIGHT && !ship.keyControls[1])
+            {
+                ship.keyControls[1] = true;
+                ship.turnRight();
+            }
+    
+            // Turn Left - LEFT_ARROW
+            else if (keyCode == KeyEvent.VK_LEFT && !ship.keyControls[2])
+            {
+                ship.keyControls[2] = true;
+                ship.turnLeft();
+            }
+    
+            // Bullet Fired - SPACE_BAR
+            else if (keyCode == KeyEvent.VK_SPACE && numBullets < BULLET_LIMIT)
+            {
+                numBullets++;
+                addParticipant(new Bullet(ship.getXNose(), ship.getYNose(), ship.getRotation(), this));
+            }
         }
     }
 

@@ -155,7 +155,7 @@ public class Asteroid extends Participant implements ShipDestroyer
     @Override
     public void collidedWith (Participant p)
     {
-        if (p instanceof AsteroidDestroyer && this.controller.checkCollisions)
+        if (p instanceof AsteroidDestroyer)
         {
             // Add points to score relative to size of asteroid
             controller.addScore(ASTEROID_SCORE[this.size]);

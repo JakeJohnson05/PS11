@@ -31,12 +31,6 @@ public class Ship extends Participant implements AsteroidDestroyer
     /** Keeps track of which ship key controls are active { thrust, turnRight, turnLeft } */
     public boolean[] keyControls;
 
-    /** Is ship invincible */
-    private boolean invincible;
-    
-    /** Timer to end Invincibility */
-    private Timer invincibilityTimer;
-
     /**
      * Constructs a ship at the specified coordinates that is pointed in the given direction.
      */
@@ -46,8 +40,6 @@ public class Ship extends Participant implements AsteroidDestroyer
         this.controller = controller;
         setPosition(x, y);
         setRotation(direction);
-        this.invincible = false;
-        this.invincibilityTimer = new Timer(INVINCIBILITY_TIME, this.controller);
         
         // Create outline
         createOutline();
@@ -97,13 +89,6 @@ public class Ship extends Participant implements AsteroidDestroyer
         poly.lineTo(-14, -10);
         poly.lineTo(-21, -12);
         poly.closePath();
-
-        if (this.isInvincible())
-        {
-            // Create Shield around Ship
-            Ellipse2D.Double ellipse = new Ellipse2D.Double(-29, -17, SHIP_HEIGHT + 10, SHIP_WIDTH + 10);
-            poly.append(ellipse, false);
-        }
 
         this.outline = poly;
     }
@@ -155,44 +140,6 @@ public class Ship extends Participant implements AsteroidDestroyer
     }
 
     /**
-     * Make the Ship Invincible
-     */
-    public void setInvincible ()
-    {
-        this.invincible = true;
-        createOutline();
-        this.invincibilityTimer.start();
-    }
-    
-    /**
-     * Get InvincibilityTimer
-     */
-    public Timer getInvincibilityTimer ()
-    {
-        return this.invincibilityTimer;
-    }
-    
-    /** 
-     * End InvincibilityTimer and turn off ship invincibility
-     */
-    public void endInvincibilityTimer ()
-    {
-        this.invincibilityTimer.stop();
-        this.invincible = false;
-        createOutline();
-    }
-    /**
-     * Returns whether or not the ship is invincible. If ship is invicible, it cannot shoot or expire, asteroids will
-     * also not be destroyed when contact is made
-     * 
-     * @return boolean
-     */
-    public boolean isInvincible ()
-    {
-        return this.invincible;
-    }
-
-    /**
      * returns the timer used for turning
      * 
      * @return Timer
@@ -208,7 +155,7 @@ public class Ship extends Participant implements AsteroidDestroyer
     @Override
     public void collidedWith (Participant p)
     {
-        if (p instanceof ShipDestroyer && !this.isInvincible())
+        if (p instanceof ShipDestroyer)
         {
             // Expire the ship from the game
             this.timer.stop();

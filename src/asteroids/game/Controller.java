@@ -304,6 +304,20 @@ public class Controller implements KeyListener, ActionListener
         // Since the ship was destroyed, schedule a transition
         scheduleTransition(END_DELAY);
     }
+    
+    /**
+     * AlienShip has been destroyed
+     */
+    public void alienShipDestroyed ()
+    {
+        // Null out the AlienShip
+        this.alienShip = null;
+        
+        // Display a graphic
+        
+        // Restart SpawnTimer
+        this.alienShipSpawnTimer.start();
+    }
 
     /**
      * An asteroid has been destroyed
@@ -315,6 +329,10 @@ public class Controller implements KeyListener, ActionListener
         // If all the asteroids are gone, schedule a transition
         if (pstate.countAsteroids() == 0)
         {
+            if (this.alienShipSpawnTimer.isRunning())
+            {
+                this.alienShipSpawnTimer.stop();
+            }
             scheduleTransition(END_DELAY);
         }
     }
@@ -361,37 +379,15 @@ public class Controller implements KeyListener, ActionListener
             display.refresh();
         }
 
-        // Ship should move if any of ship.keyControls are true / active
-        else if (e.getSource() == ship.getTimer())
-        {
-            if (this.ship.keyControls[0])
-            {
-                this.ship.accelerate();
-            }
-            if (this.ship.keyControls[1])
-            {
-                this.ship.turnRight();
-            }
-            else if (this.ship.keyControls[2])
-            {
-                this.ship.turnLeft();
-            }
-        }
-
         // If it's time to start UFO encounters
-        else if (e.getSource() == this.getAlienShipSpawnTimer())
+        else if (this.alienShip == null && e.getSource() == this.getAlienShipSpawnTimer())
         {
             // Stop AlienSpawnTimer
             this.getAlienShipSpawnTimer().stop();
-            
-            // this.getLevel == 2 ? AlienShip size = 0 : size = 1
-            this.alienShip = this.getLevel() == 2 ? new AlienShip(0, this) : new AlienShip(1, this);
+
+            // Create AlienShip with size in respect to current level
+            this.alienShip = this.getLevel() == 2 ? new AlienShip(1, this) : new AlienShip(0, this);
             addParticipant(this.alienShip);
-        }
-        else if (this.getAlienShip() != null && e.getSource() == this.getAlienShip().getAlienMovementTimer())
-        {
-            this.alienShip.getAlienMovementTimer().restart();
-            this.alienShip.changeMovement();
         }
     }
 
@@ -440,25 +436,29 @@ public class Controller implements KeyListener, ActionListener
         {
             int keyCode = e.getKeyCode();
             
+            // Destroy all asteroids and advance
+            if (keyCode == KeyEvent.VK_B)
+            {
+                pstate.clearAsteroids();
+                this.asteroidDestroyed();
+            }
+            
             // Acclerating - UP_ARROW
             if (keyCode == KeyEvent.VK_UP && !ship.keyControls[0])
             {
                 ship.keyControls[0] = true;
-                ship.accelerate();
             }
     
             // Turn Right - RIGHT_ARROW
             else if (keyCode == KeyEvent.VK_RIGHT && !ship.keyControls[1])
             {
                 ship.keyControls[1] = true;
-                ship.turnRight();
             }
     
             // Turn Left - LEFT_ARROW
             else if (keyCode == KeyEvent.VK_LEFT && !ship.keyControls[2])
             {
                 ship.keyControls[2] = true;
-                ship.turnLeft();
             }
     
             // Bullet Fired - SPACE_BAR

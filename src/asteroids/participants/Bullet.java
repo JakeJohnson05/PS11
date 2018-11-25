@@ -69,7 +69,6 @@ public class Bullet extends Participant implements AsteroidDestroyer
 
             // Inform the controller
             controller.bulletDestroyed();
-            controller.asteroidDestroyed();
         }
     }
 

@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
 import asteroids.participants.Asteroid;
-import asteroids.participants.Lives;
 
 /**
  * Keeps track of the Participants, their motions, and their collisions.
@@ -27,6 +26,20 @@ public class ParticipantState
         participants = new LinkedList<Participant>();
         pendingAdds = new HashSet<Participant>();
     }
+    
+    /**
+     * Deletes all asteroids
+     */
+    public void clearAsteroids ()
+    {
+        for (Participant p : participants)
+        {
+            if (p instanceof Asteroid)
+            {
+                Participant.expire(p);
+            }
+        }
+    }
 
     /**
      * Clears out the state.
@@ -41,20 +54,6 @@ public class ParticipantState
         participants.clear();
     }
     
-    /**
-     * Clears all Lives
-     */
-    public void clearLives ()
-    {
-        for (Participant p : participants)
-        {
-            if (p instanceof Lives && !p.isExpired())
-            {
-                Participant.expire(p);
-            }
-        }
-    }
-
     /**
      * Adds a new Participant
      */

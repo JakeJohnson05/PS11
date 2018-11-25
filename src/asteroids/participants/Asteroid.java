@@ -157,9 +157,6 @@ public class Asteroid extends Participant implements ShipDestroyer
     {
         if (p instanceof AsteroidDestroyer)
         {
-            // Add points to score relative to size of asteroid
-            controller.addScore(ASTEROID_SCORE[this.size]);
-
             // If asteroid.size > 0, splits into two smaller asteroids
             if (this.size > 0)
             {
@@ -168,6 +165,9 @@ public class Asteroid extends Participant implements ShipDestroyer
                 controller.addParticipant(
                         new Asteroid(RANDOM.nextInt(4), this.size - 1, this.getX(), this.getY(), this.controller));
             }
+
+            // Add points to score relative to size of asteroid
+            controller.addScore(ASTEROID_SCORE[this.size]);
 
             // Expire the collided asteroid
             Participant.expire(this);

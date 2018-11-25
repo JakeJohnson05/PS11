@@ -71,6 +71,14 @@ public class AlienBullet extends Participant implements AsteroidDestroyer, ShipD
             controller.asteroidDestroyed();
         }
     }
+    
+    /**
+     * Move the bullet one tick ahead
+     */
+    public void move ()
+    {
+        super.move();
+    }
 
     /**
      * This method is invoked when a ParticipantCountdownTimer completes its countdown.

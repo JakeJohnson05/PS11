@@ -45,7 +45,12 @@ public class Constants
     /**
      * Constant of acceleration of ship. Should be positive .s
      */
-    public final static double SHIP_ACCELERATION = .20;
+    public final static double SHIP_ACCELERATION = .25;
+
+    /**
+     * Radians for ship to turn each occurance
+     */
+    public final static double TURN_RADIANS = Math.PI / 70.0;
 
     /**
      * The number of milliseconds between the beginnings of frame refreshes
@@ -98,11 +103,6 @@ public class Constants
     public final static int BULLET_LIMIT = 8;
 
     /**
-     * Time for Invincibility to be active
-     */
-    public final static int INVINCIBILITY_TIME = 2000;
-
-    /**
      * Scaling factors used for asteroids of size 0, 1, and 2.
      */
     public final static double[] ASTEROID_SCALE = { 0.5, 1.0, 2.0 };
@@ -123,9 +123,24 @@ public class Constants
     public final static int[] ALIENSHIP_SCORE = { 1000, 200 };
 
     /**
-     * Base AlienShip Direction
+     * General Horizontal Directions for AlienShip
      */
-    public final static double ALIENSHIP_BASE_DIRECTION = Math.PI;
+    public final static double[] ALIENSHIP_HORIZONTAL_DIRECTIONS = { Math.PI, 0.0 };
+
+    /**
+     * Speed for Small Sized Ship
+     */
+    public final static int ALIENSHIP_SPEED = 10;
+
+    /**
+     * Delay between changes of direction for AlienShip
+     */
+    public final static int ALIENSHIP_MOVEMENT_DELAY = 1000;
+    
+    /**
+     * Delay between AlienShip shots
+     */
+    public final static int ALIENSHIP_SHOT_DELAY = 3000;
 
     /**
      * Delay after which an alien ship appears.

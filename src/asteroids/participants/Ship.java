@@ -6,7 +6,7 @@ import java.awt.geom.*;
 import asteroids.destroyers.*;
 import asteroids.game.Controller;
 import asteroids.game.Participant;
-import javax.swing.Timer;
+import asteroids.game.ParticipantCountdownTimer;
 
 /**
  * Represents ships
@@ -22,12 +22,6 @@ public class Ship extends Participant implements AsteroidDestroyer
     /** Game controller */
     private Controller controller;
 
-    /** Timer to control smooth turning */
-    private Timer timer;
-
-    /** Radians to turn each occurance */
-    private static double TURN_RADIANS = Math.PI / 80.0;
-
     /** Keeps track of which ship key controls are active { thrust, turnRight, turnLeft } */
     public boolean[] keyControls;
 
@@ -40,13 +34,12 @@ public class Ship extends Participant implements AsteroidDestroyer
         this.controller = controller;
         setPosition(x, y);
         setRotation(direction);
-        
+
         // Create outline
         createOutline();
 
-        // Schedule move timer every MOVEMENT_DELAY
-        this.timer = new Timer(MOVEMENT_DELAY, this.controller);
-        this.timer.start();
+        // Create countdown timer for when its time to turn ship
+        new ParticipantCountdownTimer(this, "updateTurning", MOVEMENT_DELAY);
 
         // Initiate boolean[] to keep track of active key controls
         this.keyControls = new boolean[] { false, false, false };
@@ -77,7 +70,7 @@ public class Ship extends Participant implements AsteroidDestroyer
     }
 
     /**
-     * Creates outline of the Ship, is Public so Controller can call it when adding or removing shield 
+     * Creates outline of the Ship, is Public so Controller can call it when adding or removing shield
      */
     public void createOutline ()
     {
@@ -117,7 +110,7 @@ public class Ship extends Participant implements AsteroidDestroyer
      */
     public void turnRight ()
     {
-        this.keyControls[1] = true;
+        // this.keyControls[1] = true;
         rotate(TURN_RADIANS);
     }
 
@@ -126,7 +119,7 @@ public class Ship extends Participant implements AsteroidDestroyer
      */
     public void turnLeft ()
     {
-        this.keyControls[2] = true;
+        // this.keyControls[2] = true;
         rotate(-TURN_RADIANS);
     }
 
@@ -135,18 +128,8 @@ public class Ship extends Participant implements AsteroidDestroyer
      */
     public void accelerate ()
     {
-        this.keyControls[0] = true;
+        // this.keyControls[0] = true;
         accelerate(SHIP_ACCELERATION);
-    }
-
-    /**
-     * returns the timer used for turning
-     * 
-     * @return Timer
-     */
-    public Timer getTimer ()
-    {
-        return this.timer;
     }
 
     /**
@@ -158,11 +141,37 @@ public class Ship extends Participant implements AsteroidDestroyer
         if (p instanceof ShipDestroyer)
         {
             // Expire the ship from the game
-            this.timer.stop();
             Participant.expire(this);
 
             // Tell the controller the ship was destroyed
             controller.shipDestroyed();
+        }
+    }
+
+    /**
+     * This method is invoked when a ParticipantCountdownTimer completes its countdown.
+     */
+    @Override
+    public void countdownComplete (Object payload)
+    {
+        // When movementTimer delay is reached, ship movements are activated
+        if (payload.equals("updateTurning") && controller.getShip() != null)
+        {
+            if (this.keyControls[0])
+            {
+                this.accelerate();
+            }
+            if (this.keyControls[1])
+            {
+                this.turnRight();
+            }
+            else if (this.keyControls[2])
+            {
+                this.turnLeft();
+            }
+
+            // Create countdown timer for when its time to turn ship
+            new ParticipantCountdownTimer(this, "updateTurning", MOVEMENT_DELAY);
         }
     }
 }

@@ -3,11 +3,11 @@ package asteroids.participants;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
-import javax.swing.Timer;
 import asteroids.destroyers.AsteroidDestroyer;
 import asteroids.destroyers.ShipDestroyer;
 import asteroids.game.Controller;
 import asteroids.game.Participant;
+import asteroids.game.ParticipantCountdownTimer;
 import static asteroids.game.Constants.*;
 
 /**
@@ -23,18 +23,12 @@ public class AlienShip extends Participant implements AsteroidDestroyer, ShipDes
     /** Size of the AlienShip */
     private int size;
 
-    /** Timer for AlienShip shots */
-    private Timer alienShotTimer;
-    
-    /** Timer for Change in AlienMovement */
-    private Timer alienMovementTimer;
-
     /** Controller for the AlienShip */
     private Controller controller;
-    
-    /** Number for whether AlienShip Moves Right = 0 or left = 1 */
-    private int rightOrLeft;
-    
+
+    /** Ship General Horizontal Direction in Radians */
+    private Double generalDirection;
+
     /**
      * Creates an AlienShip of size Small = 0 or Medium = 1. Throws IllegalArgumentException if size is invalid.
      * 
@@ -47,12 +41,16 @@ public class AlienShip extends Participant implements AsteroidDestroyer, ShipDes
         {
             throw (new IllegalArgumentException("AlienShip Size is invalid"));
         }
-        
-        rightOrLeft = RANDOM.nextInt(2);
+
+        // Set Alien ship position and orientation
         setPosition(SIZE + 5, RANDOM.nextInt(400) + 150);
         setDirection(-Math.PI / 2);
-        setVelocity(7, 2 * ALIENSHIP_BASE_DIRECTION * rightOrLeft);
-        
+
+        // Set AlienShip General Direction (Left || Right)
+        this.generalDirection = ALIENSHIP_HORIZONTAL_DIRECTIONS[RANDOM.nextInt(2)];
+
+        // Assign Velocity
+        this.changeVelocity();
 
         // Assign Vars
         this.size = size;
@@ -60,10 +58,10 @@ public class AlienShip extends Participant implements AsteroidDestroyer, ShipDes
         this.createOutline();
 
         // AlienShip has a 3 second delay between firing.
-        this.alienShotTimer = new Timer(3000, this.controller);
-        
-        // AlienMovement Timer changes course every time this changes
-        this.alienMovementTimer = new Timer(1000, this.controller);
+        new ParticipantCountdownTimer(this, "fireBullet", ALIENSHIP_SHOT_DELAY);
+
+        // AlienMovement changes between each delay
+        new ParticipantCountdownTimer(this, "changeDirection", ALIENSHIP_MOVEMENT_DELAY);
     }
 
     /**
@@ -85,7 +83,7 @@ public class AlienShip extends Participant implements AsteroidDestroyer, ShipDes
         x = new Double[] { 22.0, -22.0, -10.0, 10.0 };
         y = new Double[] { 17.0, 17.0, 27.0, 27.0 };
         poly.append(createFigure(x, y), false);
-        
+
         double scale = ALIENSHIP_SCALE[size];
         poly.transform(AffineTransform.getScaleInstance(scale, scale));
 
@@ -109,17 +107,39 @@ public class AlienShip extends Participant implements AsteroidDestroyer, ShipDes
 
         return poly;
     }
-    
+
     /**
-     * Change movement
+     * Change this.setVelocity
      */
-    public void changeMovement ()
+    public void changeVelocity ()
     {
-        int randint = RANDOM.nextInt(3) - 1;
-        
-        setVelocity(7, rightOrLeft * ALIENSHIP_BASE_DIRECTION + randint);
+        // Movement from Horizontal Direction
+        int change = RANDOM.nextInt(3) - 1;
+
+        // Change Speed relative to AlienShip.size and add Value change to generalDirection
+        setVelocity(ALIENSHIP_SPEED - (3 * this.size), this.generalDirection + change);
     }
-    
+
+    /**
+     * Get the x-coordinate of the center of the AlienShip
+     * 
+     * @return double
+     */
+    public double getX ()
+    {
+        return super.getX();
+    }
+
+    /**
+     * Get the y-coordinate of the center of the AlienShip
+     * 
+     * @return double
+     */
+    public double getY ()
+    {
+        return super.getY();
+    }
+
     /**
      * Get the size of the AlienShip
      * 
@@ -142,31 +162,58 @@ public class AlienShip extends Participant implements AsteroidDestroyer, ShipDes
     }
 
     /**
-     * Returns the timer of the AlienShip shooting
-     * 
-     * @return Timer
-     */
-    public Timer getAlienShotTimer ()
-    {
-        return this.alienShotTimer;
-    }
-    
-    /**
-     * Returns the timer for the movement of the AlienShip
-     * 
-     * @return Timer
-     */
-    public Timer getAlienMovementTimer ()
-    {
-        return this.alienMovementTimer;
-    }
-
-    /**
      * Called when alien ship collides with another object
      */
     @Override
     public void collidedWith (Participant p)
     {
+        if (p instanceof ShipDestroyer || p instanceof AsteroidDestroyer)
+        {
+            // Add points
+            this.controller.addScore(ALIENSHIP_SCORE[this.size]);
 
+            // Expire ship
+            Participant.expire(this);
+
+            // Inform the controller
+            this.controller.alienShipDestroyed();
+        }
+    }
+
+    /**
+     * This method is invoked when a ParticipantCountdownTimer completes its countdown.
+     */
+    @Override
+    public void countdownComplete (Object payload)
+    {
+        // After a Delay of 3000 ms after each shot, another shot is fired
+        if (payload.equals("fireBullet") && this.controller.getAlienShip() != null)
+        {
+            double direction;
+
+            if (this.size == 1)
+            {
+                direction = RANDOM.nextDouble() * 2 * Math.PI;
+            }
+            else
+            {
+                direction = Math.PI / 2.0;
+            }
+            AlienBullet alienBullet = new AlienBullet(this.getX(), this.getY(), direction, this.controller);
+            alienBullet.move();
+            this.controller.addParticipant(alienBullet);
+
+            // Restart CountdownTimer
+            new ParticipantCountdownTimer(this, "fireBullet", ALIENSHIP_SHOT_DELAY);
+        }
+        
+        // After a Delay of 1000 ms after each change in direction, another change is made
+        else if (payload.equals("changeDirection") && this.controller.getAlienShip() != null)
+        {
+            this.changeVelocity();
+            
+            // Restart CountdownTimer
+            new ParticipantCountdownTimer(this, "changeDirection", ALIENSHIP_MOVEMENT_DELAY);
+        }
     }
 }

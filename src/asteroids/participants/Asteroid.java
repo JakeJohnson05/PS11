@@ -157,6 +157,9 @@ public class Asteroid extends Participant implements ShipDestroyer
     {
         if (p instanceof AsteroidDestroyer)
         {
+            // Create Debris
+            this.controller.createAsteroidDebris(this.getX(), this.getY());
+            
             // If asteroid.size > 0, splits into two smaller asteroids
             if (this.size > 0)
             {

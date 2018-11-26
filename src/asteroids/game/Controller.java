@@ -108,7 +108,9 @@ public class Controller implements KeyListener, ActionListener
         return this.alienShipSpawnTimer;
     }
 
-    /** Add to the score */
+    /** 
+     * Add to the score 
+     */
     public void addScore (int points)
     {
         this.score += points;
@@ -292,8 +294,6 @@ public class Controller implements KeyListener, ActionListener
         // Null out the ship
         ship = null;
 
-        // Display a graphic
-
         // Decrement lives
         lives--;
 
@@ -313,8 +313,6 @@ public class Controller implements KeyListener, ActionListener
         // Null out the AlienShip
         this.alienShip = null;
         
-        // Display a graphic
-        
         // Restart SpawnTimer
         this.alienShipSpawnTimer.start();
     }
@@ -324,8 +322,9 @@ public class Controller implements KeyListener, ActionListener
      */
     public void asteroidDestroyed ()
     {
+        // Update Score
         this.display.setScore(this.getScore());
-
+        
         // If all the asteroids are gone, schedule a transition
         if (pstate.countAsteroids() == 0)
         {
@@ -351,6 +350,32 @@ public class Controller implements KeyListener, ActionListener
     private void scheduleTransition (int m)
     {
         transitionTime = System.currentTimeMillis() + m;
+    }
+    
+    /**
+     * Creates Debris when a Ship (Ship or AlienShip) is destroyed
+     * @param x, y
+     */
+    public void createShipDebris (double x, double y)
+    {
+        createAsteroidDebris(x, y);
+        
+        for (int i = 0; i < 2; i++)
+        {
+            addParticipant(new Debris(x, y, "line"));
+        }
+    }
+    
+    /**
+     * Creates Debris when an Asteroid is destroyed
+     * @param x, y
+     */
+    public void createAsteroidDebris (double x, double y)
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            addParticipant(new Debris(x, y, "Circle"));
+        }
     }
 
     /**

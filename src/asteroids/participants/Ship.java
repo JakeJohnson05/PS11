@@ -110,7 +110,6 @@ public class Ship extends Participant implements AsteroidDestroyer
      */
     public void turnRight ()
     {
-        // this.keyControls[1] = true;
         rotate(TURN_RADIANS);
     }
 
@@ -119,7 +118,6 @@ public class Ship extends Participant implements AsteroidDestroyer
      */
     public void turnLeft ()
     {
-        // this.keyControls[2] = true;
         rotate(-TURN_RADIANS);
     }
 
@@ -128,7 +126,6 @@ public class Ship extends Participant implements AsteroidDestroyer
      */
     public void accelerate ()
     {
-        // this.keyControls[0] = true;
         accelerate(SHIP_ACCELERATION);
     }
 
@@ -140,6 +137,9 @@ public class Ship extends Participant implements AsteroidDestroyer
     {
         if (p instanceof ShipDestroyer)
         {
+            // Create Debris
+            this.controller.createShipDebris(this.getX(), this.getY());
+            
             // Expire the ship from the game
             Participant.expire(this);
 

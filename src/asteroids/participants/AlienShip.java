@@ -169,6 +169,9 @@ public class AlienShip extends Participant implements AsteroidDestroyer, ShipDes
     {
         if (p instanceof ShipDestroyer || p instanceof AsteroidDestroyer)
         {
+            // Create Debris
+            this.controller.createShipDebris(this.getX(), this.getY());
+            
             // Add points
             this.controller.addScore(ALIENSHIP_SCORE[this.size]);
 

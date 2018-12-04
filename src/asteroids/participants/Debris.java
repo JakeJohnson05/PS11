@@ -50,7 +50,8 @@ public class Debris extends Participant implements OnscreenLabel
         
         // Set velocity with Random Speed [MIN_SPEED, MAX_SPEED] and random direction
         double speed = (RANDOM.nextDouble() * (MAX_SPEED - MIN_SPEED)) + MIN_SPEED;
-        setVelocity(speed, RANDOM.nextDouble() * Math.PI * 2.0);
+        double direction = RANDOM.nextDouble() * Math.PI * 2.0;
+        setVelocity(speed, direction);
         
         // Set Timer for debris to expire
         new ParticipantCountdownTimer(this, "expire", DURATION);
@@ -63,14 +64,19 @@ public class Debris extends Participant implements OnscreenLabel
      */
     private Shape createOutline (String object)
     {
+        // Draw Dot Debris
         if (object.equalsIgnoreCase("dot") || object.equalsIgnoreCase("circle"))
-        {
+        { 
             return new Ellipse2D.Double(-CIRCLE_DIAM / 2.0, -CIRCLE_DIAM / 2.0, CIRCLE_DIAM, CIRCLE_DIAM);
         }
+        
+        // Draw Line Debris
         else if (object.equalsIgnoreCase("line"))
         {
             return new Line2D.Double(-LINE_LENGTH / 2.0, 0, LINE_LENGTH / 2.0, 0);
         }
+        
+        // If niether Line nor Dot Debris
         else
         {
             throw (new IllegalArgumentException("Object: " + object + " is not a valid Debris shape"));

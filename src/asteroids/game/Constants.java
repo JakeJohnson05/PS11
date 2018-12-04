@@ -130,7 +130,7 @@ public class Constants
     /**
      * Speed for Small Sized Ship
      */
-    public final static int ALIENSHIP_SPEED = 10;
+    public final static int ALIENSHIP_SPEED = 8;
 
     /**
      * Delay between changes of direction for AlienShip

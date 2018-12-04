@@ -4,6 +4,7 @@ import static asteroids.game.Constants.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Iterator;
+//import java.util.Scanner;
 import javax.swing.*;
 import asteroids.participants.*;
 
@@ -41,6 +42,9 @@ public class Controller implements KeyListener, ActionListener
 
     /** Players current score */
     private int score;
+    
+    /** If a highScore is made holds his name */
+//    private String newName = "";
 
     /**
      * The time at which a transition to a new stage of the game should be made. A transition is scheduled a few seconds
@@ -156,7 +160,51 @@ public class Controller implements KeyListener, ActionListener
     {
         display.removeKeyListener(this);
         display.setLegend(GAME_OVER);
+        
+//        ArrayList<String> highScores = getHighScores();
+//        
+//        for (String name : highScores)
+//        {
+//            if (name.startsWith("    "))
+//            {
+//                display.addKeyListener(new KeyAdapter(){
+//                    public void keyPressed(KeyEvent e){
+//                        newName += e;
+//                    }
+//                  });
+//            }
+//        }
+//        
+//        display.setHighScores(highScores);
     }
+    
+//    /** 
+//     * Get the highScores
+//     */
+//    private ArrayList<String> getHighScores ()
+//    {
+//        Scanner scnr = new Scanner("/asteroids.scores/HighScores.txt");
+//        ArrayList<String> highScores = new ArrayList<String>();
+//        
+//        while (highScores.size() <= 3 && scnr.hasNextLine())
+//        {
+//            String oneHighScore = scnr.nextLine();
+//            int index = oneHighScore.indexOf('\t');
+//            int oneScore = Integer.parseInt(oneHighScore.substring(index + 1));
+//            
+//            if (this.getScore() > oneScore)
+//            {
+//                highScores.add("    \t" + this.getScore());
+//            }
+//            else
+//            {
+//                highScores.add(oneHighScore);
+//            }
+//        }
+//        
+//        scnr.close();
+//        return highScores;
+//    }
 
     /**
      * Place a new ship in the center of the screen. Remove any existing ship first.
@@ -175,6 +223,12 @@ public class Controller implements KeyListener, ActionListener
      */
     public void drawLives ()
     {
+        for (Lives life : lifeList)
+        {
+            Participant.expire(life);
+        }
+        lifeList.clear();
+        
         for (int life = 0; life < this.lives; life++)
         {
             this.lifeList.add(new Lives(life));
@@ -210,6 +264,7 @@ public class Controller implements KeyListener, ActionListener
         pstate.clear();
         display.setLegend("");
         ship = null;
+        alienShip = null;
     }
 
     /**
@@ -405,7 +460,7 @@ public class Controller implements KeyListener, ActionListener
         }
 
         // If it's time to start UFO encounters
-        else if (this.alienShip == null && e.getSource() == this.getAlienShipSpawnTimer())
+        else if (this.alienShip == null && this.level > 1 && e.getSource() == this.getAlienShipSpawnTimer())
         {
             // Stop AlienSpawnTimer
             this.getAlienShipSpawnTimer().stop();
@@ -438,6 +493,7 @@ public class Controller implements KeyListener, ActionListener
             // If there are no lives left, the game is over. Show the final screen.
             if (lives <= 0)
             {
+                display.removeKeyListener(this);
                 finalScreen();
             }
             else if (pstate.countAsteroids() == 0)
@@ -468,8 +524,15 @@ public class Controller implements KeyListener, ActionListener
                 this.asteroidDestroyed();
             }
             
+            // Add more lives
+            else if (keyCode == KeyEvent.VK_N)
+            {
+                this.lives++;
+                this.drawLives();
+            }
+            
             // Acclerating - UP_ARROW
-            if (keyCode == KeyEvent.VK_UP && !ship.keyControls[0])
+            else if (keyCode == KeyEvent.VK_UP && !ship.keyControls[0])
             {
                 ship.keyControls[0] = true;
             }
@@ -507,6 +570,7 @@ public class Controller implements KeyListener, ActionListener
         if (keyCode == KeyEvent.VK_UP && ship != null)
         {
             ship.keyControls[0] = false;
+            ship.turnDrawThrustOff();
         }
 
         // Turn Right - RIGHT_ARROW

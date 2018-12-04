@@ -72,6 +72,7 @@ public class AlienShip extends Participant implements AsteroidDestroyer, ShipDes
         Double[] x;
         Double[] y;
 
+        // Draw the Shape
         x = new Double[] { 7.0, -7.0, -10.0, 10.0 };
         y = new Double[] { -5.0, -5.0, 5.0, 5.0 };
         Path2D.Double poly = createFigure(x, y);
@@ -84,6 +85,7 @@ public class AlienShip extends Participant implements AsteroidDestroyer, ShipDes
         y = new Double[] { 17.0, 17.0, 27.0, 27.0 };
         poly.append(createFigure(x, y), false);
 
+        // Change size to Scale
         double scale = ALIENSHIP_SCALE[size];
         poly.transform(AffineTransform.getScaleInstance(scale, scale));
 
@@ -91,7 +93,7 @@ public class AlienShip extends Participant implements AsteroidDestroyer, ShipDes
     }
 
     /**
-     * Draws a 4-Sided figure with values
+     * Draws a 4-Sided figure with values. Helper Function when drawing Ship
      * 
      * @params x values, y values
      * @return Path2D.Double
@@ -149,6 +151,35 @@ public class AlienShip extends Participant implements AsteroidDestroyer, ShipDes
     {
         return this.size;
     }
+    
+    /**
+     * When this.size == 0 (Small AlienShip) gets the direction for the bullet
+     * 
+     * @return Double
+     */
+    private Double getBulletDirection ()
+    {   
+        // Get Ship Coords
+        Double shipX = this.controller.getShip().getX();
+        Double shipY = this.controller.getShip().getY();
+        
+        // Get AlienShip Coords
+        Double alienShipX = this.getX();
+        Double alienShipY = this.getY();
+        
+        // Find Direction
+        Double direction = Math.atan2(shipY - alienShipY, shipX - alienShipX);
+        
+        // Change with an error of +- 5 degrees
+        Double error = RANDOM.nextDouble() * Math.toRadians(5);
+        
+        if (RANDOM.nextBoolean())
+        {
+            error *= -1;
+        }
+        
+        return direction + error;
+    }
 
     /**
      * Returns the outline of the AlienShip
@@ -171,7 +202,7 @@ public class AlienShip extends Participant implements AsteroidDestroyer, ShipDes
         {
             // Create Debris
             this.controller.createShipDebris(this.getX(), this.getY());
-            
+
             // Add points
             this.controller.addScore(ALIENSHIP_SCORE[this.size]);
 
@@ -190,7 +221,7 @@ public class AlienShip extends Participant implements AsteroidDestroyer, ShipDes
     public void countdownComplete (Object payload)
     {
         // After a Delay of 3000 ms after each shot, another shot is fired
-        if (payload.equals("fireBullet") && this.controller.getAlienShip() != null)
+        if (payload.equals("fireBullet") && this.controller.getAlienShip() != null && this.controller.getShip() != null)
         {
             double direction;
 
@@ -200,21 +231,25 @@ public class AlienShip extends Participant implements AsteroidDestroyer, ShipDes
             }
             else
             {
-                direction = Math.PI / 2.0;
+                direction = getBulletDirection();
             }
-            AlienBullet alienBullet = new AlienBullet(this.getX(), this.getY(), direction, this.controller);
-            alienBullet.move();
-            this.controller.addParticipant(alienBullet);
+
+            if (this.controller.getShip() != null)
+            {
+                AlienBullet alienBullet = new AlienBullet(this.getX(), this.getY(), direction, this.controller);
+                alienBullet.move();
+                this.controller.addParticipant(alienBullet);
+            }
 
             // Restart CountdownTimer
             new ParticipantCountdownTimer(this, "fireBullet", ALIENSHIP_SHOT_DELAY);
         }
-        
+
         // After a Delay of 1000 ms after each change in direction, another change is made
         else if (payload.equals("changeDirection") && this.controller.getAlienShip() != null)
         {
             this.changeVelocity();
-            
+
             // Restart CountdownTimer
             new ParticipantCountdownTimer(this, "changeDirection", ALIENSHIP_MOVEMENT_DELAY);
         }

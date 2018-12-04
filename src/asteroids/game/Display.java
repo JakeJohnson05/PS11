@@ -3,6 +3,7 @@ package asteroids.game;
 import javax.swing.*;
 import static asteroids.game.Constants.*;
 import java.awt.*;
+import java.util.ArrayList;
 
 /**
  * Defines the top-level appearance of an Asteroids game.
@@ -66,6 +67,14 @@ public class Display extends JFrame
     public void setLegend (String s)
     {
         screen.setLegend(s);
+    }
+    
+    /**
+     * Sets the high scores
+     */
+    public void setHighScores (ArrayList<String> highScores)
+    {
+        
     }
     
     /**

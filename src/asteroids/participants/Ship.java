@@ -16,14 +16,20 @@ public class Ship extends Participant implements AsteroidDestroyer
     /** The outline of the ship */
     private Shape outline;
 
-    /** The outline of the ship with thrust animation */
-    // private Shape outlineWithThrust;
+    /** The base Shape of the ship without thrust */
+    private Path2D.Double baseShape;
+    
+    /** The Shape of the ships thrust */
+    private Path2D.Double thrustShape;
 
     /** Game controller */
     private Controller controller;
 
     /** Keeps track of which ship key controls are active { thrust, turnRight, turnLeft } */
-    public boolean[] keyControls;
+    public boolean[] keyControls = new boolean[] { false, false, false };
+
+    /** Thrust boolean to have thrust shape flash on and off */
+    private boolean drawThrust = false;
 
     /**
      * Constructs a ship at the specified coordinates that is pointed in the given direction.
@@ -36,13 +42,12 @@ public class Ship extends Participant implements AsteroidDestroyer
         setRotation(direction);
 
         // Create outline
+        createBaseOutline();
+        createThrustOutline();
         createOutline();
 
         // Create countdown timer for when its time to turn ship
         new ParticipantCountdownTimer(this, "updateTurning", MOVEMENT_DELAY);
-
-        // Initiate boolean[] to keep track of active key controls
-        this.keyControls = new boolean[] { false, false, false };
     }
 
     /**
@@ -68,22 +73,58 @@ public class Ship extends Participant implements AsteroidDestroyer
         transformPoint(point);
         return point.getY();
     }
+    
+    /** 
+     * Creates base outline of the ship
+     */
+    private void createBaseOutline ()
+    {
+        this.baseShape = new Path2D.Double();
+        baseShape.moveTo(21, 0);
+        baseShape.lineTo(-21, 12);
+        baseShape.lineTo(-14, 10);
+        baseShape.lineTo(-14, -10);
+        baseShape.lineTo(-21, -12);
+        baseShape.closePath();
+    }
+    
+    /**
+     * Creates the outline of the thrust
+     */
+    private void createThrustOutline ()
+    {
+        this.thrustShape = new Path2D.Double();
+        thrustShape.moveTo(-14, 5);
+        thrustShape.lineTo(-30, 0);
+        thrustShape.lineTo(-14, -5);
+        thrustShape.closePath();
+    }
 
     /**
-     * Creates outline of the Ship, is Public so Controller can call it when adding or removing shield
+     * Creates outline of the Ship
      */
-    public void createOutline ()
+    private void createOutline ()
     {
-        // Draw Ship
-        Path2D.Double poly = new Path2D.Double();
-        poly.moveTo(21, 0);
-        poly.lineTo(-21, 12);
-        poly.lineTo(-14, 10);
-        poly.lineTo(-14, -10);
-        poly.lineTo(-21, -12);
-        poly.closePath();
+        // Temperary holder for baseOutline so it is never changed
+        Path2D.Double baseShapeHold = new Path2D.Double();
+        baseShapeHold.append(this.baseShape, false);
+        
+        // If thrust is being applied - append thrust image
+        if (this.drawThrust)
+        {
+            baseShapeHold.append(this.thrustShape, false);
+        }
 
-        this.outline = poly;
+        this.outline = baseShapeHold;
+    }
+
+    /**
+     * Turns this.drawThrust off and redraws ship image
+     */
+    public void turnDrawThrustOff ()
+    {
+        this.drawThrust = false;
+        this.createOutline();
     }
 
     /**
@@ -139,7 +180,7 @@ public class Ship extends Participant implements AsteroidDestroyer
         {
             // Create Debris
             this.controller.createShipDebris(this.getX(), this.getY());
-            
+
             // Expire the ship from the game
             Participant.expire(this);
 
@@ -159,6 +200,8 @@ public class Ship extends Participant implements AsteroidDestroyer
         {
             if (this.keyControls[0])
             {
+                this.drawThrust = this.drawThrust ? false : true;
+                this.createOutline();
                 this.accelerate();
             }
             if (this.keyControls[1])

@@ -66,7 +66,9 @@ public class Lives extends Participant implements OnscreenLabel
         return this.outline;
     }
 
-    // Ignored
+    /** 
+     * Ignored
+     */
     @Override
     public void collidedWith (Participant p)
     {

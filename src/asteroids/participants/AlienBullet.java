@@ -19,9 +19,6 @@ public class AlienBullet extends Participant implements AsteroidDestroyer, ShipD
     /** The outline of the bullet */
     private Shape outline;
 
-    /** The controller of the game */
-    private Controller controller;
-
     /** Bullet Diameter */
     private static double BULLET_DIAM = 3.0;
 
@@ -31,10 +28,9 @@ public class AlienBullet extends Participant implements AsteroidDestroyer, ShipD
      */
     public AlienBullet (double x, double y, double direction, Controller controller)
     {
-        // Create Bullet
-        this.controller = controller;
+        // set Participant Variables
         setPosition(x, y);
-        setVelocity(BULLET_SPEED, direction);
+        setVelocity(BULLET_SPEED - 1, direction);
 
         // Create Outline
         Ellipse2D.Double ellipse = new Ellipse2D.Double(-(BULLET_DIAM / 2.0), -(BULLET_DIAM / 2.0), BULLET_DIAM,
@@ -57,18 +53,15 @@ public class AlienBullet extends Participant implements AsteroidDestroyer, ShipD
     }
 
     /**
-     * Called when a bullet hits a ShipDestroyer
+     * Called when a bullet hits an asteroid or the ship
      */
     @Override
     public void collidedWith (Participant p)
     {
-        if (p instanceof ShipDestroyer)
+        if (p instanceof ShipDestroyer || p instanceof AsteroidDestroyer)
         {
             // Expire the Bullet
             Participant.expire(this);
-
-            // Inform the controller
-            controller.asteroidDestroyed();
         }
     }
     

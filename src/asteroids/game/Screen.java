@@ -107,7 +107,7 @@ public class Screen extends JPanel
         {
             setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 120));
         }
-        else if (type.equalsIgnoreCase("score") || type.equalsIgnoreCase("level"))
+        else if (type.equalsIgnoreCase("score") || type.equalsIgnoreCase("level") || type.equalsIgnoreCase("scores"))
         {
             setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 60));
         }

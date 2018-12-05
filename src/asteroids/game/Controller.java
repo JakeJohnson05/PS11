@@ -1,12 +1,13 @@
 package asteroids.game;
 
 import static asteroids.game.Constants.*;
+import asteroids.participants.*;
 import java.awt.event.*;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Iterator;
-//import java.util.Scanner;
+import javax.sound.sampled.*;
 import javax.swing.*;
-import asteroids.participants.*;
 
 /**
  * Controls a game of Asteroids.
@@ -28,6 +29,15 @@ public class Controller implements KeyListener, ActionListener
     /** AlienShip Spawn Timer */
     private Timer alienShipSpawnTimer;
 
+    /** beat audio Timer */
+    private Timer beatTimer;
+    
+    /** Interval between Timer beats */
+    private int beatInterval;
+    
+    /** If beat1 was played last */
+    private boolean beat1Last;
+
     /** Number of lives left */
     private int lives;
 
@@ -42,9 +52,34 @@ public class Controller implements KeyListener, ActionListener
 
     /** Players current score */
     private int score;
-    
-    /** If a highScore is made holds his name */
-//    private String newName = "";
+
+    /** Clip used for when alienShip blows up */
+    private Clip bangAlienShipClip = createClip("/sounds/bangAlienShip.wav");
+
+    /** Clip used for when Large asteroid blows up */
+    public Clip bangLargeClip = createClip("/sounds/bangLarge.wav");
+
+    /** Clip used for when Medium asteroid blows up */
+    public Clip bangMediumClip = createClip("/sounds/bangMedium.wav");
+
+    /** Clip used for when Small asteroid blows up */
+    public Clip bangSmallClip = createClip("/sounds/bangSmall.wav");
+
+    /** Clip used for when Ship blows up */
+    private Clip bangShipClip = createClip("/sounds/bangShip.wav");
+
+    /** Clip used when shot is fired */
+    private Clip fireClip = createClip("/sounds/fire.wav");
+
+    /** List of Clipse for gamePlay beat audio: { beat1, beat2 } */
+    private Clip[] beatClips = new Clip[] { createClip("/sounds/beat1.wav"), createClip("/sounds/beat2.wav") };
+
+    /** List of Clips for alienShipAudio: { saucerBig, saucerSmall } */
+    private Clip[] saucerClips = new Clip[] { createClip("/sounds/saucerSmall.wav"),
+            createClip("/sounds/saucerBig.wav") };
+
+    /** Clip used when Ship is accelerating */
+    private Clip thrustClip = createClip("/sounds/thrust.wav");
 
     /**
      * The time at which a transition to a new stage of the game should be made. A transition is scheduled a few seconds
@@ -112,8 +147,8 @@ public class Controller implements KeyListener, ActionListener
         return this.alienShipSpawnTimer;
     }
 
-    /** 
-     * Add to the score 
+    /**
+     * Add to the score
      */
     public void addScore (int points)
     {
@@ -160,51 +195,7 @@ public class Controller implements KeyListener, ActionListener
     {
         display.removeKeyListener(this);
         display.setLegend(GAME_OVER);
-        
-//        ArrayList<String> highScores = getHighScores();
-//        
-//        for (String name : highScores)
-//        {
-//            if (name.startsWith("    "))
-//            {
-//                display.addKeyListener(new KeyAdapter(){
-//                    public void keyPressed(KeyEvent e){
-//                        newName += e;
-//                    }
-//                  });
-//            }
-//        }
-//        
-//        display.setHighScores(highScores);
     }
-    
-//    /** 
-//     * Get the highScores
-//     */
-//    private ArrayList<String> getHighScores ()
-//    {
-//        Scanner scnr = new Scanner("/asteroids.scores/HighScores.txt");
-//        ArrayList<String> highScores = new ArrayList<String>();
-//        
-//        while (highScores.size() <= 3 && scnr.hasNextLine())
-//        {
-//            String oneHighScore = scnr.nextLine();
-//            int index = oneHighScore.indexOf('\t');
-//            int oneScore = Integer.parseInt(oneHighScore.substring(index + 1));
-//            
-//            if (this.getScore() > oneScore)
-//            {
-//                highScores.add("    \t" + this.getScore());
-//            }
-//            else
-//            {
-//                highScores.add(oneHighScore);
-//            }
-//        }
-//        
-//        scnr.close();
-//        return highScores;
-//    }
 
     /**
      * Place a new ship in the center of the screen. Remove any existing ship first.
@@ -216,6 +207,12 @@ public class Controller implements KeyListener, ActionListener
         ship = new Ship(SIZE / 2, SIZE / 2, -Math.PI / 2, this);
         addParticipant(ship);
         display.setLegend("");
+        
+        // Reset all beatTimer related vars, and start the timer
+        this.beatInterval = INITIAL_BEAT;
+        this.beat1Last = false;
+        this.beatTimer = new Timer(beatInterval, this);
+        this.beatTimer.start();
     }
 
     /**
@@ -228,7 +225,7 @@ public class Controller implements KeyListener, ActionListener
             Participant.expire(life);
         }
         lifeList.clear();
-        
+
         for (int life = 0; life < this.lives; life++)
         {
             this.lifeList.add(new Lives(life));
@@ -358,18 +355,30 @@ public class Controller implements KeyListener, ActionListener
 
         // Since the ship was destroyed, schedule a transition
         scheduleTransition(END_DELAY);
+
+        // Play ship destroyed clip
+        playClip(bangShipClip);
+        
+        // Stop beat Timer
+        this.beatTimer.stop();
     }
-    
+
     /**
      * AlienShip has been destroyed
      */
     public void alienShipDestroyed ()
     {
+        // Stop alienShip audio clip
+        this.saucerClips[alienShip.getAlienShipSize()].stop();
+
         // Null out the AlienShip
         this.alienShip = null;
-        
+
         // Restart SpawnTimer
         this.alienShipSpawnTimer.start();
+
+        // Play AlienShip destroyed Clip
+        playClip(bangAlienShipClip);
     }
 
     /**
@@ -379,7 +388,7 @@ public class Controller implements KeyListener, ActionListener
     {
         // Update Score
         this.display.setScore(this.getScore());
-        
+
         // If all the asteroids are gone, schedule a transition
         if (pstate.countAsteroids() == 0)
         {
@@ -406,23 +415,25 @@ public class Controller implements KeyListener, ActionListener
     {
         transitionTime = System.currentTimeMillis() + m;
     }
-    
+
     /**
      * Creates Debris when a Ship (Ship or AlienShip) is destroyed
+     * 
      * @param x, y
      */
     public void createShipDebris (double x, double y)
     {
         createAsteroidDebris(x, y);
-        
+
         for (int i = 0; i < 2; i++)
         {
             addParticipant(new Debris(x, y, "line"));
         }
     }
-    
+
     /**
      * Creates Debris when an Asteroid is destroyed
+     * 
      * @param x, y
      */
     public void createAsteroidDebris (double x, double y)
@@ -458,6 +469,30 @@ public class Controller implements KeyListener, ActionListener
             // Refresh screen
             display.refresh();
         }
+        
+        // Time for a beat
+        else if (this.ship != null && e.getSource() == this.beatTimer)
+        {
+            if (beat1Last)
+            {
+                playClip(this.beatClips[1]);
+            }
+            else
+            {
+                playClip(this.beatClips[0]);
+            }
+            
+            beat1Last = beat1Last ? false : true;
+            
+            this.beatInterval -= BEAT_DELTA;
+            
+            if (this.beatInterval < BEAT_DELTA)
+            {
+                this.beatInterval = BEAT_DELTA;
+            }
+            
+            this.beatTimer.setDelay(beatInterval);
+        }
 
         // If it's time to start UFO encounters
         else if (this.alienShip == null && this.level > 1 && e.getSource() == this.getAlienShipSpawnTimer())
@@ -468,6 +503,9 @@ public class Controller implements KeyListener, ActionListener
             // Create AlienShip with size in respect to current level
             this.alienShip = this.getLevel() == 2 ? new AlienShip(1, this) : new AlienShip(0, this);
             addParticipant(this.alienShip);
+
+            // Loop AlienShip audio
+            this.saucerClips[alienShip.getAlienShipSize()].loop(Clip.LOOP_CONTINUOUSLY);
         }
     }
 
@@ -516,44 +554,47 @@ public class Controller implements KeyListener, ActionListener
         if (this.getShip() != null)
         {
             int keyCode = e.getKeyCode();
-            
+
             // Destroy all asteroids and advance
             if (keyCode == KeyEvent.VK_B)
             {
                 pstate.clearAsteroids();
                 this.asteroidDestroyed();
             }
-            
+
             // Add more lives
             else if (keyCode == KeyEvent.VK_N)
             {
                 this.lives++;
                 this.drawLives();
             }
-            
-            // Acclerating - UP_ARROW
+
+            // Accelerating - UP_ARROW
             else if (keyCode == KeyEvent.VK_UP && !ship.keyControls[0])
             {
                 ship.keyControls[0] = true;
+                playClip(thrustClip);
             }
-    
+
             // Turn Right - RIGHT_ARROW
             else if (keyCode == KeyEvent.VK_RIGHT && !ship.keyControls[1])
             {
                 ship.keyControls[1] = true;
             }
-    
+
             // Turn Left - LEFT_ARROW
             else if (keyCode == KeyEvent.VK_LEFT && !ship.keyControls[2])
             {
                 ship.keyControls[2] = true;
             }
-    
+
             // Bullet Fired - SPACE_BAR
             else if (keyCode == KeyEvent.VK_SPACE && numBullets < BULLET_LIMIT)
             {
+                // Increase bullets, add Bullet participant, play Bullet fired clip
                 numBullets++;
                 addParticipant(new Bullet(ship.getXNose(), ship.getYNose(), ship.getRotation(), this));
+                playClip(fireClip);
             }
         }
     }
@@ -592,5 +633,49 @@ public class Controller implements KeyListener, ActionListener
     @Override
     public void keyTyped (KeyEvent e)
     {
+    }
+
+    /**
+     * Creates an audio clip from a sound file.
+     */
+    public Clip createClip (String soundFile)
+    {
+        // Opening the sound file this way will work no matter how the
+        // project is exported. The only restriction is that the
+        // sound files must be stored in a package.
+        try (BufferedInputStream sound = new BufferedInputStream(getClass().getResourceAsStream(soundFile)))
+        {
+            // Create and return a Clip that will play a sound file. There are
+            // various reasons that the creation attempt could fail. If it
+            // fails, return null.
+            Clip clip = AudioSystem.getClip();
+            clip.open(AudioSystem.getAudioInputStream(sound));
+            return clip;
+        }
+        catch (LineUnavailableException e)
+        {
+            return null;
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
+        catch (UnsupportedAudioFileException e)
+        {
+            return null;
+        }
+    }
+
+    /**
+     * Plays a Clip
+     */
+    public void playClip (Clip clip)
+    {
+        if (clip.isRunning())
+        {
+            clip.stop();
+        }
+        clip.setFramePosition(0);
+        clip.start();
     }
 }

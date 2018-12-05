@@ -3,6 +3,7 @@ package asteroids.participants;
 import static asteroids.game.Constants.*;
 import java.awt.Shape;
 import java.awt.geom.*;
+import javax.sound.sampled.Clip;
 import asteroids.destroyers.AsteroidDestroyer;
 import asteroids.destroyers.ShipDestroyer;
 import asteroids.game.Controller;
@@ -24,6 +25,9 @@ public class Asteroid extends Participant implements ShipDestroyer
 
     /** The speed of the Asteroid */
     private int speed;
+    
+    /** Audio Clips for the Asteroid being destroyed */
+    private Clip[] audioClips;
 
     /**
      * Throws an IllegalArgumentException if size or variety is out of range.
@@ -41,7 +45,7 @@ public class Asteroid extends Participant implements ShipDestroyer
         }
         else if (variety < 0 || variety > 3)
         {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Invalid asteroid variety");
         }
 
         // Create the asteroid
@@ -56,6 +60,9 @@ public class Asteroid extends Participant implements ShipDestroyer
         {
             this.speed = RANDOM.nextInt(this.speed - 3) + 3;
         }
+        
+        // Create audio clip hash
+        this.audioClips = new Clip[] {controller.bangSmallClip, controller.bangMediumClip, controller.bangLargeClip};
 
         setPosition(x, y);
         setVelocity(speed, RANDOM.nextDouble() * 2 * Math.PI);
@@ -157,9 +164,6 @@ public class Asteroid extends Participant implements ShipDestroyer
     {
         if (p instanceof AsteroidDestroyer)
         {
-            // Create Debris
-            this.controller.createAsteroidDebris(this.getX(), this.getY());
-            
             // If asteroid.size > 0, splits into two smaller asteroids
             if (this.size > 0)
             {
@@ -169,11 +173,17 @@ public class Asteroid extends Participant implements ShipDestroyer
                         new Asteroid(RANDOM.nextInt(4), this.size - 1, this.getX(), this.getY(), this.controller));
             }
 
+            // Create Debris
+            this.controller.createAsteroidDebris(this.getX(), this.getY());
+
             // Add points to score relative to size of asteroid
             controller.addScore(ASTEROID_SCORE[this.size]);
 
             // Expire the collided asteroid
             Participant.expire(this);
+            
+            // Play asteroidDestroyed audio according to asteroid size
+            controller.playClip(this.audioClips[this.size]);
 
             // Inform the controller
             controller.asteroidDestroyed();

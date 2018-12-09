@@ -2,6 +2,7 @@ package asteroids.game;
 
 import static asteroids.game.Constants.*;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Iterator;
 import javax.swing.*;
 
@@ -23,18 +24,31 @@ public class Screen extends JPanel
     /** Current Level */
     private String level;
 
+    /** HighScores */
+    private ArrayList<Integer> highScores;
+
+    /** Legend Font */
+    private Font legendFont = new Font(Font.SANS_SERIF, Font.PLAIN, 120);
+
+    /** Score and Level Font */
+    private Font scoreLevelFont = new Font(Font.SANS_SERIF, Font.PLAIN, 60);
+
+    // /** HighScores Font */
+    // private Font highScoresFont = new Font(Font.SANS_SERIF)
+
     /**
      * Creates an empty screen
      */
     public Screen (Controller controller)
     {
         this.controller = controller;
-        legend = "";
+        this.legend = "";
+        this.highScores = null;
+
         setPreferredSize(new Dimension(SIZE, SIZE));
         setMinimumSize(new Dimension(SIZE, SIZE));
         setBackground(Color.black);
         setForeground(Color.white);
-
         setFocusable(true);
     }
 
@@ -63,6 +77,21 @@ public class Screen extends JPanel
     }
 
     /**
+     * Set the high scores
+     */
+    public void setHighScores (ArrayList<Integer> highScores)
+    {
+        if (highScores != null)
+        {
+            this.highScores = highScores;
+        }
+        else
+        {
+            this.highScores = null;
+        }
+    }
+
+    /**
      * Paint the participants onto this panel
      */
     @Override
@@ -84,48 +113,30 @@ public class Screen extends JPanel
         }
 
         // Draw the Label Legend
+        setFont(legendFont);
         drawLegend(g);
+
+        // Draw the highScores
+        if (highScores != null)
+        {
+            setFont(scoreLevelFont);
+            drawHighScores(g);
+        }
 
         // Draw Labels Score and Level If game has Begun
         if (this.score != null && this.level != null)
         {
+            setFont(scoreLevelFont);
             drawLevel(g);
             drawScore(g);
-        }
-
-    }
-
-    /**
-     * sets the font to what type of label. Input "Legend" to set large font type, or Input "Score"/"Level" to set a
-     * smaller font type
-     * 
-     * @param type
-     */
-    private void setDesiredFont (String type)
-    {
-        if (type.equalsIgnoreCase("legend"))
-        {
-            setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 120));
-        }
-        else if (type.equalsIgnoreCase("score") || type.equalsIgnoreCase("level") || type.equalsIgnoreCase("scores"))
-        {
-            setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 60));
-        }
-        else
-        {
-            throw (new IllegalArgumentException("Font for " + type + " has not been set up yet."));
         }
     }
 
     /**
      * Draws text across the middle of the panel
-     * 
-     * @param Graphics object
      */
     private void drawLegend (Graphics g)
     {
-        // Set the font and size
-        setDesiredFont("legend");
         int size = g.getFontMetrics().stringWidth(legend);
 
         // Draw text
@@ -134,14 +145,9 @@ public class Screen extends JPanel
 
     /**
      * Draws the current score in the top left corner
-     * 
-     * @param Graphics object
      */
     private void drawScore (Graphics g)
     {
-        // Set the font
-        setDesiredFont("score");
-
         // Get really good consistent spacing from wall
         FontMetrics fm = g.getFontMetrics(g.getFont());
         Double xOffset = g.getFont().getStringBounds(this.score, fm.getFontRenderContext()).getMinX();
@@ -152,19 +158,36 @@ public class Screen extends JPanel
 
     /**
      * Draws the current Level in the top right corner
-     * 
-     * @param Graphics object
      */
     private void drawLevel (Graphics g)
     {
-        // Set the font
-        setDesiredFont("level");
-
         // Get really good consistent spacing from wall
         FontMetrics fm = g.getFontMetrics(g.getFont());
         Double xOffset = g.getFont().getStringBounds(this.level, fm.getFontRenderContext()).getMaxX();
 
         // Draw text
         g.drawString(this.level, SIZE - LABEL_HORIZONTAL_OFFSET - xOffset.intValue(), LABEL_VERTICAL_OFFSET * 2);
+    }
+
+    /**
+     * Draws the highScores underneath GameOver text
+     */
+    private void drawHighScores (Graphics g)
+    {
+        FontMetrics fm = g.getFontMetrics(g.getFont());
+        Double xOffset = g.getFont().getStringBounds("High Scores", fm.getFontRenderContext()).getWidth();
+
+        // Draw "High Scores"
+        g.drawString("High Scores", (SIZE - xOffset.intValue()) / 2, SIZE / 2 + 100);
+
+        // Get Spacing
+        Integer firstScore = this.highScores.get(2);
+        fm = g.getFontMetrics(g.getFont());
+        xOffset = g.getFont().getStringBounds(firstScore.toString(), fm.getFontRenderContext()).getMaxX();
+
+        // Draw each Score
+        g.drawString(firstScore.toString(), (SIZE - xOffset.intValue()) / 2, SIZE / 2 + 170);
+        g.drawString(this.highScores.get(1).toString(), (SIZE - xOffset.intValue()) / 2, SIZE / 2 + 220);
+        g.drawString(this.highScores.get(0).toString(), (SIZE - xOffset.intValue()) / 2, SIZE / 2 + 270);
     }
 }

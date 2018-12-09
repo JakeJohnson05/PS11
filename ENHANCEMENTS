@@ -1,2 +1,8 @@
 Put detailed information about all extra credit enhancements here.  
 
+HighScores
+	The top 3 highest scores are stored in /asteroids/scores/HighScores.txt
+	Each time a game is completed we store the scores in HighScores.txt in a list 
+	and add the score of the current game. The list is sorted and the lowest value is
+	removed. The remaining 3 scores overwrite HighScores.txt and are then displayed on
+	the screen below the legend "Game Over".

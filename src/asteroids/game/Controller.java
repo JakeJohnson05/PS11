@@ -6,8 +6,10 @@ import java.awt.event.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Scanner;
 import javax.sound.sampled.*;
 import javax.swing.*;
+import java.util.Collections;
 
 /**
  * Controls a game of Asteroids.
@@ -31,10 +33,13 @@ public class Controller implements KeyListener, ActionListener
 
     /** beat audio Timer */
     private Timer beatTimer;
-    
+
+    /** Delay to display highScores Timer */
+    private Timer highScoresTimer = new Timer(1000, null);
+
     /** Interval between Timer beats */
     private int beatInterval;
-    
+
     /** If beat1 was played last */
     private boolean beat1Last;
 
@@ -52,6 +57,9 @@ public class Controller implements KeyListener, ActionListener
 
     /** Players current score */
     private int score;
+
+    /** Top 3 highest scores */
+    private ArrayList<Integer> highScores = new ArrayList<Integer>();
 
     /** Clip used for when alienShip blows up */
     private Clip bangAlienShipClip = createClip("/sounds/bangAlienShip.wav");
@@ -195,6 +203,66 @@ public class Controller implements KeyListener, ActionListener
     {
         display.removeKeyListener(this);
         display.setLegend(GAME_OVER);
+        display.refresh();
+
+        displayHighScores();
+    }
+
+    /**
+     * Does everything needed to be done with the highScores
+     */
+    private void displayHighScores ()
+    {
+        // Display highScores
+        try
+        {
+            File file = new File(
+                    "C:/Users/Jake Johnson/eclipse-workspace/PS11_wastedPotential/src/asteroids/scores/HighScores.txt");
+            Scanner scnr = new Scanner(file);
+
+            while (scnr.hasNext() && scnr.hasNextLine())
+            {
+                try
+                {
+                    this.highScores.add(Integer.parseInt(scnr.nextLine()));
+                }
+                catch (Exception e)
+                {
+                    System.out.println("An error occured when parsing HighScores.txt" + e.getMessage());
+                }
+            }
+            scnr.close();
+        }
+        catch (Exception e)
+        {
+            System.out.println("Error occured with HighScores.text: " + e.getMessage());
+        }
+
+        correctHighScores();
+        display.setHighScores(this.highScores);
+    }
+
+    /**
+     * Corrects highScores with new score and overwrites HighScores.txt
+     */
+    private void correctHighScores ()
+    {
+        // Add newest score && remove the lowest
+        this.highScores.add(this.score);
+        Collections.sort(this.highScores);
+        this.highScores.remove(0);
+
+        // Overwrite HighScores.txt with new scores
+        try (FileWriter fileWriter = new FileWriter(
+                "C:/Users/Jake Johnson/eclipse-workspace/PS11_wastedPotential/src/asteroids/scores/HighScores.txt"))
+        {
+            
+            fileWriter.write(highScores.get(2) + "\n" + highScores.get(1) + "\n" + highScores.get(0));
+        }
+        catch (Exception e)
+        {
+            System.out.println("An error occured with the FileWriter: " + e.getMessage());
+        }
     }
 
     /**
@@ -207,7 +275,7 @@ public class Controller implements KeyListener, ActionListener
         ship = new Ship(SIZE / 2, SIZE / 2, -Math.PI / 2, this);
         addParticipant(ship);
         display.setLegend("");
-        
+
         // Reset all beatTimer related vars, and start the timer
         this.beatInterval = INITIAL_BEAT;
         this.beat1Last = false;
@@ -358,7 +426,7 @@ public class Controller implements KeyListener, ActionListener
 
         // Play ship destroyed clip
         playClip(bangShipClip);
-        
+
         // Stop beat Timer
         this.beatTimer.stop();
     }
@@ -469,7 +537,7 @@ public class Controller implements KeyListener, ActionListener
             // Refresh screen
             display.refresh();
         }
-        
+
         // Time for a beat
         else if (this.ship != null && e.getSource() == this.beatTimer)
         {
@@ -481,16 +549,16 @@ public class Controller implements KeyListener, ActionListener
             {
                 playClip(this.beatClips[0]);
             }
-            
+
             beat1Last = beat1Last ? false : true;
-            
+
             this.beatInterval -= BEAT_DELTA;
-            
+
             if (this.beatInterval < BEAT_DELTA)
             {
                 this.beatInterval = BEAT_DELTA;
             }
-            
+
             this.beatTimer.setDelay(beatInterval);
         }
 
@@ -506,6 +574,14 @@ public class Controller implements KeyListener, ActionListener
 
             // Loop AlienShip audio
             this.saucerClips[alienShip.getAlienShipSize()].loop(Clip.LOOP_CONTINUOUSLY);
+        }
+
+        // Time to display highScores
+        else if (e.getSource() == this.highScoresTimer)
+        {
+            this.highScoresTimer.stop();
+            displayHighScores();
+            display.refresh();
         }
     }
 

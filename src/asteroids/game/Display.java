@@ -72,9 +72,9 @@ public class Display extends JFrame
     /**
      * Sets the high scores
      */
-    public void setHighScores (ArrayList<String> highScores)
+    public void setHighScores (ArrayList<Integer> highScores)
     {
-        
+        this.screen.setHighScores(highScores);
     }
     
     /**
